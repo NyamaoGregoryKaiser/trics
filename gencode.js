@@ -100,17 +100,27 @@ function initializeRepo() {
     console.log('Repository already exists, pulling latest changes...');
     process.chdir(CONFIG.repoPath);
     try {
-      // Ensure we're on the main branch
-      execSync('git checkout -b main');
-      // Remove any problematic submodules
+      // Clean up any problematic submodules
       try {
-        execSync('git rm --cached active-project');
+        const gitModulesPath = path.join(CONFIG.repoPath, '.gitmodules');
+        if (fs.existsSync(gitModulesPath)) {
+          fs.unlinkSync(gitModulesPath);
+        }
+        execSync('git rm --cached -r active-project');
         fs.rmSync(path.join(CONFIG.repoPath, 'active-project'), { recursive: true, force: true });
       } catch (e) {
-        console.log('No active-project submodule to remove');
+        console.log('No submodules to clean up');
       }
+
+      // Ensure we're on the main branch
+      try {
+        execSync('git checkout main');
+      } catch (e) {
+        execSync('git checkout -b main');
+      }
+
       // Pull latest changes
-      execSync(`git pull origin ${CONFIG.branch}`);
+      execSync(`git pull origin main`);
       console.log('Latest changes pulled from remote repository');
     } catch (e) {
       console.error('Error pulling from repository:', e.message);
@@ -1314,13 +1324,17 @@ function addCodeToProject(projectDir) {
   try {
     process.chdir(projectPath);
     // Ensure we're on the main branch
-    execSync('git checkout -b main');
+    try {
+      execSync('git checkout main');
+    } catch (e) {
+      execSync('git checkout -b main');
+    }
     // Add all files
     execSync('git add .');
     // Commit changes
     execSync(`git commit -m "Add new features and improvements"`);
     // Push to remote
-    execSync(`git push origin ${CONFIG.branch}`);
+    execSync(`git push origin main`);
     console.log('Changes pushed to remote repository');
   } catch (e) {
     console.error('Error pushing to remote repository:', e.message);
