@@ -140,12 +140,21 @@ function initializeRepo() {
         console.log('No submodules to clean up');
       }
 
-      // Ensure we're on master branch
-      execSync('git checkout master');
-      
-      // Pull latest changes
-      execSync('git pull origin master');
-      console.log('Latest changes pulled from remote repository');
+      // Ensure we're on master branch and up to date
+      try {
+        execSync('git checkout master');
+        // Fetch all changes first
+        execSync('git fetch origin');
+        // Reset to origin/master to ensure we're in sync
+        execSync('git reset --hard origin/master');
+        // Pull latest changes
+        execSync('git pull origin master');
+        console.log('Latest changes pulled from remote repository');
+      } catch (e) {
+        console.error('Error updating repository:', e.message);
+        // If we can't pull, at least ensure we're on master
+        execSync('git checkout master');
+      }
     } catch (e) {
       console.error('Error pulling from repository:', e.message);
     }
@@ -1347,8 +1356,10 @@ function addCodeToProject(projectDir) {
   // Commit and push the changes
   try {
     process.chdir(projectPath);
-    // Ensure we're on master branch
+    // Ensure we're on master branch and up to date
     execSync('git checkout master');
+    execSync('git fetch origin');
+    execSync('git reset --hard origin/master');
     // Add all files
     execSync('git add .');
     // Commit changes
