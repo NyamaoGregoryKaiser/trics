@@ -1,0 +1,16 @@
+{
+  "name": "trics",
+  "version": "1.0.0",
+  "description": "Automated code generation and Git push service",
+  "main": "gencode.js",
+  "scripts": {
+    "start": "node gencode.js"
+  },
+  "dependencies": {
+    "node-cron": "^3.0.2",
+    "express": "^4.18.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+} 

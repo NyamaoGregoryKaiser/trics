@@ -7,6 +7,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const cron = require('node-cron');
+const express = require('express');
 
 // Create logs directory if it doesn't exist
 const logsDir = path.join(__dirname, 'logs');
@@ -1542,4 +1543,17 @@ cron.schedule('0 */6 * * *', () => {
 // Run immediately on startup
 main().catch(err => {
     error(`Initial run failed: ${err.message}`);
+});
+
+const app = express();
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'healthy' });
+});
+
+// Start the server
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
