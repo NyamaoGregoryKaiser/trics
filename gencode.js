@@ -86,12 +86,12 @@ function initializeRepo() {
       // Try to add remote and push (might fail if repo doesn't exist on GitHub yet)
       try {
         execSync(`git remote add origin ${CONFIG.repoUrl}`);
-        execSync('git branch -M main');
-        execSync('git push -u origin main');
+        execSync('git branch -M master');
+        execSync('git push -u origin master');
         console.log('Initial commit pushed to remote repository');
       } catch (e) {
         console.log('Could not push to remote. You may need to create the repository on GitHub first.');
-        console.log(`After creating the repository, run: git remote add origin ${CONFIG.repoUrl} && git push -u origin main`);
+        console.log(`After creating the repository, run: git remote add origin ${CONFIG.repoUrl} && git push -u origin master`);
       }
     } catch (e) {
       console.error('Error during repository initialization:', e.message);
@@ -100,27 +100,51 @@ function initializeRepo() {
     console.log('Repository already exists, pulling latest changes...');
     process.chdir(CONFIG.repoPath);
     try {
+      // First, check if we're in a detached HEAD state
+      const branchOutput = execSync('git branch --show-current').toString().trim();
+      const isDetached = !branchOutput;
+      
+      if (isDetached) {
+        console.log('Detached HEAD state detected, fixing branch state...');
+        // Get the current commit hash
+        const currentCommit = execSync('git rev-parse HEAD').toString().trim();
+        
+        // Create a new branch at the current commit
+        execSync(`git checkout -b temp-branch ${currentCommit}`);
+        
+        // Switch to master branch
+        try {
+          execSync('git checkout master');
+        } catch (e) {
+          console.log('Master branch not found, creating it...');
+          execSync('git checkout -b master');
+        }
+        
+        // Delete the temporary branch
+        execSync('git branch -D temp-branch');
+      }
+
       // Clean up any problematic submodules
       try {
         const gitModulesPath = path.join(CONFIG.repoPath, '.gitmodules');
         if (fs.existsSync(gitModulesPath)) {
           fs.unlinkSync(gitModulesPath);
         }
+        // Remove the submodule from Git's index
         execSync('git rm --cached -r active-project');
+        // Remove the submodule directory
         fs.rmSync(path.join(CONFIG.repoPath, 'active-project'), { recursive: true, force: true });
+        // Remove the submodule entry from .git/config
+        execSync('git config --remove-section submodule.active-project || true');
       } catch (e) {
         console.log('No submodules to clean up');
       }
 
-      // Ensure we're on the main branch
-      try {
-        execSync('git checkout main');
-      } catch (e) {
-        execSync('git checkout -b main');
-      }
-
+      // Ensure we're on master branch
+      execSync('git checkout master');
+      
       // Pull latest changes
-      execSync(`git pull origin main`);
+      execSync('git pull origin master');
       console.log('Latest changes pulled from remote repository');
     } catch (e) {
       console.error('Error pulling from repository:', e.message);
@@ -221,7 +245,7 @@ function createProjectStructure(projectDir, projectType, language) {
     process.chdir(projectDir);
     execSync('git add .');
     execSync(`git commit -m "Initial commit: ${projectType} project setup"`);
-    execSync('git push origin main');
+    execSync('git push origin master');
     console.log('Changes pushed to remote repository');
   } catch (e) {
     console.error('Error pushing to remote repository:', e.message);
@@ -1323,18 +1347,14 @@ function addCodeToProject(projectDir) {
   // Commit and push the changes
   try {
     process.chdir(projectPath);
-    // Ensure we're on the main branch
-    try {
-      execSync('git checkout main');
-    } catch (e) {
-      execSync('git checkout -b main');
-    }
+    // Ensure we're on master branch
+    execSync('git checkout master');
     // Add all files
     execSync('git add .');
     // Commit changes
     execSync(`git commit -m "Add new features and improvements"`);
     // Push to remote
-    execSync(`git push origin main`);
+    execSync('git push origin master');
     console.log('Changes pushed to remote repository');
   } catch (e) {
     console.error('Error pushing to remote repository:', e.message);
