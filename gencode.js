@@ -86,6 +86,7 @@ function initializeRepo() {
       // Try to add remote and push (might fail if repo doesn't exist on GitHub yet)
       try {
         execSync(`git remote add origin ${CONFIG.repoUrl}`);
+        execSync('git branch -M main');
         execSync('git push -u origin main');
         console.log('Initial commit pushed to remote repository');
       } catch (e) {
@@ -99,7 +100,17 @@ function initializeRepo() {
     console.log('Repository already exists, pulling latest changes...');
     process.chdir(CONFIG.repoPath);
     try {
-      execSync('git pull');
+      // Ensure we're on the main branch
+      execSync('git checkout -b main');
+      // Remove any problematic submodules
+      try {
+        execSync('git rm --cached active-project');
+        fs.rmSync(path.join(CONFIG.repoPath, 'active-project'), { recursive: true, force: true });
+      } catch (e) {
+        console.log('No active-project submodule to remove');
+      }
+      // Pull latest changes
+      execSync(`git pull origin ${CONFIG.branch}`);
       console.log('Latest changes pulled from remote repository');
     } catch (e) {
       console.error('Error pulling from repository:', e.message);
@@ -1302,9 +1313,14 @@ function addCodeToProject(projectDir) {
   // Commit and push the changes
   try {
     process.chdir(projectPath);
+    // Ensure we're on the main branch
+    execSync('git checkout -b main');
+    // Add all files
     execSync('git add .');
+    // Commit changes
     execSync(`git commit -m "Add new features and improvements"`);
-    execSync('git push origin main');
+    // Push to remote
+    execSync(`git push origin ${CONFIG.branch}`);
     console.log('Changes pushed to remote repository');
   } catch (e) {
     console.error('Error pushing to remote repository:', e.message);
