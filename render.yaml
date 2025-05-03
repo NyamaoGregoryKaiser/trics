@@ -3,7 +3,10 @@ services:
     name: gitpush-worker
     env: node
     branch: master
-    buildCommand: npm install
+    buildCommand: |
+      npm install
+      chmod +x setup.sh
+      ./setup.sh
     startCommand: node gencode.js
     envVars:
       - key: NODE_VERSION
