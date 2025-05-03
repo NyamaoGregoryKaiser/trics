@@ -110,32 +110,34 @@ function initializeRepo() {
         const currentCommit = execSync('git rev-parse HEAD').toString().trim();
         
         // Create a new branch at the current commit
-        execSync(`git checkout -b temp-branch ${currentCommit}`);
-        
-        // Switch to master branch
-        try {
-          execSync('git checkout master');
-        } catch (e) {
-          console.log('Master branch not found, creating it...');
-          execSync('git checkout -b master');
-        }
-        
-        // Delete the temporary branch
-        execSync('git branch -D temp-branch');
+        execSync(`git checkout -b master ${currentCommit}`);
       }
 
       // Clean up any problematic submodules
       try {
-        const gitModulesPath = path.join(CONFIG.repoPath, '.gitmodules');
-        if (fs.existsSync(gitModulesPath)) {
-          fs.unlinkSync(gitModulesPath);
+        // Remove submodule configuration
+        if (fs.existsSync(path.join(CONFIG.repoPath, '.gitmodules'))) {
+          fs.unlinkSync(path.join(CONFIG.repoPath, '.gitmodules'));
         }
-        // Remove the submodule from Git's index
-        execSync('git rm --cached -r active-project');
-        // Remove the submodule directory
-        fs.rmSync(path.join(CONFIG.repoPath, 'active-project'), { recursive: true, force: true });
-        // Remove the submodule entry from .git/config
-        execSync('git config --remove-section submodule.active-project || true');
+        
+        // Remove submodule from Git's index
+        try {
+          execSync('git rm --cached -r active-project');
+        } catch (e) {
+          console.log('No active-project in Git index');
+        }
+        
+        // Remove submodule directory
+        if (fs.existsSync(path.join(CONFIG.repoPath, 'active-project'))) {
+          fs.rmSync(path.join(CONFIG.repoPath, 'active-project'), { recursive: true, force: true });
+        }
+        
+        // Remove submodule entry from .git/config
+        try {
+          execSync('git config --remove-section submodule.active-project');
+        } catch (e) {
+          console.log('No submodule.active-project in Git config');
+        }
       } catch (e) {
         console.log('No submodules to clean up');
       }

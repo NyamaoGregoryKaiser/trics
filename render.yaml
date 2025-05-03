@@ -7,7 +7,9 @@ services:
       npm install
       chmod +x setup.sh
       ./setup.sh
-    startCommand: node gencode.js
+    startCommand: |
+      ./setup.sh
+      node gencode.js
     envVars:
       - key: NODE_VERSION
         value: 18.0.0
