@@ -20,27 +20,27 @@ rm -rf active-project || true
 git rm --cached -r active-project || true
 git config --remove-section submodule.active-project || true
 
-# Force checkout master branch
-echo "Ensuring we're on master branch..."
-git checkout -f master || git checkout -b master
+# Force checkout main branch
+echo "Ensuring we're on main branch..."
+git checkout -f main || git checkout -b main
 
 # If we're still in a detached HEAD state, create a new branch
 if ! git branch --show-current > /dev/null 2>&1; then
     echo "Detached HEAD state detected, fixing..."
     current_commit=$(git rev-parse HEAD)
-    git checkout -b master $current_commit
+    git checkout -b main $current_commit
 fi
 
-# Reset to origin/master
-echo "Resetting to origin/master..."
+# Reset to origin/main
+echo "Resetting to origin/main..."
 git fetch origin
-git reset --hard origin/master || true
+git reset --hard origin/main || true
 
 # Clean up any untracked files
 echo "Cleaning up untracked files..."
 git clean -fd
 
-# Ensure we're on master branch
-git checkout -f master
+# Ensure we're on main branch
+git checkout -f main
 
 echo "Git setup completed successfully" 

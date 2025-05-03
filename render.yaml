@@ -2,7 +2,7 @@ services:
   - type: worker
     name: gitpush-worker
     env: node
-    branch: master
+    branch: main
     buildCommand: |
       npm install
       chmod +x setup.sh
@@ -15,7 +15,7 @@ services:
         value: 18.0.0
     autoDeploy: true
     repo:
-      branch: master
+      branch: main
       cloneCommand: |
         git clone https://github.com/NyamaoGregoryKaiser/trics.git .
-        git checkout master 
+        git checkout main 

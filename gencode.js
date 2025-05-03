@@ -86,12 +86,12 @@ function initializeRepo() {
       // Try to add remote and push (might fail if repo doesn't exist on GitHub yet)
       try {
         execSync(`git remote add origin ${CONFIG.repoUrl}`);
-        execSync('git branch -M master');
-        execSync('git push -u origin master');
+        execSync('git branch -M main');
+        execSync('git push -u origin main');
         console.log('Initial commit pushed to remote repository');
       } catch (e) {
         console.log('Could not push to remote. You may need to create the repository on GitHub first.');
-        console.log(`After creating the repository, run: git remote add origin ${CONFIG.repoUrl} && git push -u origin master`);
+        console.log(`After creating the repository, run: git remote add origin ${CONFIG.repoUrl} && git push -u origin main`);
       }
     } catch (e) {
       console.error('Error during repository initialization:', e.message);
@@ -110,7 +110,7 @@ function initializeRepo() {
         const currentCommit = execSync('git rev-parse HEAD').toString().trim();
         
         // Create a new branch at the current commit
-        execSync(`git checkout -b master ${currentCommit}`);
+        execSync(`git checkout -b main ${currentCommit}`);
       }
 
       // Clean up any problematic submodules
@@ -142,20 +142,20 @@ function initializeRepo() {
         console.log('No submodules to clean up');
       }
 
-      // Ensure we're on master branch and up to date
+      // Ensure we're on main branch and up to date
       try {
-        execSync('git checkout master');
+        execSync('git checkout main');
         // Fetch all changes first
         execSync('git fetch origin');
-        // Reset to origin/master to ensure we're in sync
-        execSync('git reset --hard origin/master');
+        // Reset to origin/main to ensure we're in sync
+        execSync('git reset --hard origin/main');
         // Pull latest changes
-        execSync('git pull origin master');
+        execSync('git pull origin main');
         console.log('Latest changes pulled from remote repository');
       } catch (e) {
         console.error('Error updating repository:', e.message);
-        // If we can't pull, at least ensure we're on master
-        execSync('git checkout master');
+        // If we can't pull, at least ensure we're on main
+        execSync('git checkout main');
       }
     } catch (e) {
       console.error('Error pulling from repository:', e.message);
@@ -173,12 +173,14 @@ function ensureProjectExists() {
     const newProject = createNewProject();
     projectState.lastProject = newProject;
     projectState.shouldCreateNewProject = false; // Next time, add to existing
+    console.log(`Created new project: ${newProject}`);
     return [newProject];
   } else {
     // Add to existing project
     const targetProject = projectState.lastProject || getRandomItem(projects);
     addCodeToProject(targetProject);
     projectState.shouldCreateNewProject = true; // Next time, create new
+    console.log(`Added code to existing project: ${targetProject}`);
     return projects;
   }
 }
@@ -212,7 +214,11 @@ function generateRandomName() {
   const adjectives = ['awesome', 'brilliant', 'clever', 'dynamic', 'elegant', 'fast', 'great', 'helpful'];
   const nouns = ['app', 'tool', 'system', 'framework', 'service', 'platform', 'solution', 'utility'];
   
-  return `${getRandomItem(adjectives)}-${getRandomItem(nouns)}-${Math.floor(Math.random() * 1000)}`;
+  const randomAdjective = getRandomItem(adjectives);
+  const randomNoun = getRandomItem(nouns);
+  const randomNumber = Math.floor(Math.random() * 1000);
+  
+  return `${randomAdjective}-${randomNoun}-${randomNumber}`;
 }
 
 // Create basic project structure based on type
@@ -256,7 +262,7 @@ function createProjectStructure(projectDir, projectType, language) {
     process.chdir(projectDir);
     execSync('git add .');
     execSync(`git commit -m "Initial commit: ${projectType} project setup"`);
-    execSync('git push origin master');
+    execSync('git push origin main');
     console.log('Changes pushed to remote repository');
   } catch (e) {
     console.error('Error pushing to remote repository:', e.message);
@@ -1334,8 +1340,19 @@ function addCodeToProject(projectDir) {
   
   // Read the project's README to determine its type
   const readmePath = path.join(projectPath, 'README.md');
-  const readmeContent = fs.readFileSync(readmePath, 'utf8');
-  const projectType = readmeContent.match(/A (.*?) project/)[1];
+  let projectType = 'web-app'; // Default project type
+  
+  try {
+    const readmeContent = fs.readFileSync(readmePath, 'utf8');
+    const match = readmeContent.match(/A (.*?) project/);
+    if (match && match[1]) {
+      projectType = match[1];
+    } else {
+      console.log(`Could not determine project type from README for ${projectDir}, using default type: ${projectType}`);
+    }
+  } catch (e) {
+    console.log(`Error reading README for ${projectDir}: ${e.message}, using default type: ${projectType}`);
+  }
   
   console.log(`Adding new code to existing project: ${projectDir} (${projectType})`);
   
@@ -1353,21 +1370,24 @@ function addCodeToProject(projectDir) {
     case 'utility-library':
       addUtilityLibraryCode(projectPath);
       break;
+    default:
+      console.log(`Unknown project type: ${projectType}, using web-app as default`);
+      addWebAppCode(projectPath);
   }
   
   // Commit and push the changes
   try {
     process.chdir(projectPath);
-    // Ensure we're on master branch and up to date
-    execSync('git checkout master');
+    // Ensure we're on main branch and up to date
+    execSync('git checkout main');
     execSync('git fetch origin');
-    execSync('git reset --hard origin/master');
+    execSync('git reset --hard origin/main');
     // Add all files
     execSync('git add .');
     // Commit changes
     execSync(`git commit -m "Add new features and improvements"`);
     // Push to remote
-    execSync('git push origin master');
+    execSync('git push origin main');
     console.log('Changes pushed to remote repository');
   } catch (e) {
     console.error('Error pushing to remote repository:', e.message);
@@ -1587,7 +1607,7 @@ async function main() {
     log('Starting code generation process...');
     initializeRepo();
     const projects = ensureProjectExists();
-    log('Projects created:', projects);
+    log(`Projects created/updated: ${projects.join(', ')}`);
     log('Code generation completed successfully');
   } catch (err) {
     error(`Error in main process: ${err.message}`);
