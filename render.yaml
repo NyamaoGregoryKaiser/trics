@@ -1,0 +1,16 @@
+services:
+  - type: worker
+    name: gitpush-worker
+    env: node
+    branch: master
+    buildCommand: npm install
+    startCommand: node gencode.js
+    envVars:
+      - key: NODE_VERSION
+        value: 18.0.0
+    autoDeploy: true
+    repo:
+      branch: master
+      cloneCommand: |
+        git clone https://github.com/NyamaoGregoryKaiser/trics.git .
+        git checkout master 
